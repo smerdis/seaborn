@@ -32,6 +32,8 @@ def bootstrap(*args, **kwargs):
         random_seed : int | None, default None
             Seed for the random number generator; useful if you want
             reproducible resamples.
+        boot_p : list | None, default None
+            Probability distribution of elements for bootstrapping
 
     Returns
     -------
@@ -51,6 +53,9 @@ def bootstrap(*args, **kwargs):
     units = kwargs.get("units", None)
     smooth = kwargs.get("smooth", False)
     random_seed = kwargs.get("random_seed", None)
+    boot_p = kwargs.get("boot_p", None)
+    if boot_p is not None and len(boot_p) != n:
+        raise ValueError("Probability arrray must be same length as input(s)")
     if axis is None:
         func_kwargs = dict()
     else:
@@ -83,11 +88,11 @@ def bootstrap(*args, **kwargs):
 
     boot_dist = []
     for i in range(int(n_boot)):
-        resampler = rs.randint(0, n, n)
+        # if boot_p is None this reduces to uniform distribution, so same as old behavior
+        resampler = rs.choice(n, n, p=boot_p) 
         sample = [a.take(resampler, axis=0) for a in args]
         boot_dist.append(f(*sample, **func_kwargs))
     return np.array(boot_dist)
-
 
 def _structured_bootstrap(args, n_boot, units, func, func_kwargs, rs):
     """Resample units instead of datapoints."""

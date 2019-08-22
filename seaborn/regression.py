@@ -72,7 +72,7 @@ class _RegressionPlotter(_LinearPlotter):
     is thus also used indirectly by `lmplot`.
     """
     def __init__(self, x, y, data=None, x_estimator=None, x_bins=None,
-                 x_ci="ci", scatter=True, fit_reg=True, ci=95, n_boot=1000,
+                 x_ci="ci", scatter=True, fit_reg=True, ci=95, n_boot=1000, boot_p=None,
                  units=None, order=1, logistic=False, lowess=False,
                  robust=False, logx=False, x_partial=None, y_partial=None,
                  truncate=False, dropna=True, x_jitter=None, y_jitter=None,
@@ -83,6 +83,7 @@ class _RegressionPlotter(_LinearPlotter):
         self.ci = ci
         self.x_ci = ci if x_ci == "ci" else x_ci
         self.n_boot = n_boot
+        self.boot_p = boot_p
         self.scatter = scatter
         self.fit_reg = fit_reg
         self.order = order
@@ -168,7 +169,8 @@ class _RegressionPlotter(_LinearPlotter):
                     if self.units is not None:
                         units = self.units[x == val]
                     boots = algo.bootstrap(_y, func=self.x_estimator,
-                                           n_boot=self.n_boot, units=units)
+                                           n_boot=self.n_boot, boot_p=self.boot_p, 
+                                           units=units)
                     _ci = utils.ci(boots, self.x_ci)
                 cis.append(_ci)
 
@@ -227,7 +229,8 @@ class _RegressionPlotter(_LinearPlotter):
             return yhat, None
 
         beta_boots = algo.bootstrap(X, y, func=reg_func,
-                                    n_boot=self.n_boot, units=self.units).T
+                                    n_boot=self.n_boot, boot_p=self.boot_p,
+                                    units=self.units).T
         yhat_boots = grid.dot(beta_boots).T
         return yhat, yhat_boots
 
@@ -242,7 +245,8 @@ class _RegressionPlotter(_LinearPlotter):
             return yhat, None
 
         yhat_boots = algo.bootstrap(x, y, func=reg_func,
-                                    n_boot=self.n_boot, units=self.units)
+                                    n_boot=self.n_boot, boot_p=self.boot_p,
+                                    units=self.units)
         return yhat, yhat_boots
 
     def fit_statsmodels(self, grid, model, **kwargs):
@@ -264,7 +268,8 @@ class _RegressionPlotter(_LinearPlotter):
             return yhat, None
 
         yhat_boots = algo.bootstrap(X, y, func=reg_func,
-                                    n_boot=self.n_boot, units=self.units)
+                                    n_boot=self.n_boot, boot_p=self.boot_p,
+                                    units=self.units)
         return yhat, yhat_boots
 
     def fit_lowess(self):
@@ -287,7 +292,8 @@ class _RegressionPlotter(_LinearPlotter):
             return yhat, None
 
         beta_boots = algo.bootstrap(X, y, func=reg_func,
-                                    n_boot=self.n_boot, units=self.units).T
+                                    n_boot=self.n_boot, boot_p=self.boot_p,
+                                    units=self.units).T
         yhat_boots = grid.dot(beta_boots).T
         return yhat, yhat_boots
 
@@ -532,7 +538,7 @@ def lmplot(x, y, data, hue=None, col=None, row=None, palette=None,
            col_wrap=None, height=5, aspect=1, markers="o", sharex=True,
            sharey=True, hue_order=None, col_order=None, row_order=None,
            legend=True, legend_out=True, x_estimator=None, x_bins=None,
-           x_ci="ci", scatter=True, fit_reg=True, ci=95, n_boot=1000,
+           x_ci="ci", scatter=True, fit_reg=True, ci=95, n_boot=1000, boot_p=None,
            units=None, order=1, logistic=False, lowess=False, robust=False,
            logx=False, x_partial=None, y_partial=None, truncate=False,
            x_jitter=None, y_jitter=None, scatter_kws=None, line_kws=None,
@@ -580,7 +586,7 @@ def lmplot(x, y, data, hue=None, col=None, row=None, palette=None,
     # Draw the regression plot on each facet
     regplot_kws = dict(
         x_estimator=x_estimator, x_bins=x_bins, x_ci=x_ci,
-        scatter=scatter, fit_reg=fit_reg, ci=ci, n_boot=n_boot, units=units,
+        scatter=scatter, fit_reg=fit_reg, ci=ci, n_boot=n_boot, boot_p=boot_p, units=units,
         order=order, logistic=logistic, lowess=lowess, robust=robust,
         logx=logx, x_partial=x_partial, y_partial=y_partial, truncate=truncate,
         x_jitter=x_jitter, y_jitter=y_jitter,
@@ -767,7 +773,7 @@ lmplot.__doc__ = dedent("""\
 
 
 def regplot(x, y, data=None, x_estimator=None, x_bins=None, x_ci="ci",
-            scatter=True, fit_reg=True, ci=95, n_boot=1000, units=None,
+            scatter=True, fit_reg=True, ci=95, n_boot=1000, boot_p=None, units=None,
             order=1, logistic=False, lowess=False, robust=False,
             logx=False, x_partial=None, y_partial=None,
             truncate=False, dropna=True, x_jitter=None, y_jitter=None,
@@ -775,7 +781,7 @@ def regplot(x, y, data=None, x_estimator=None, x_bins=None, x_ci="ci",
             scatter_kws=None, line_kws=None, ax=None):
 
     plotter = _RegressionPlotter(x, y, data, x_estimator, x_bins, x_ci,
-                                 scatter, fit_reg, ci, n_boot, units,
+                                 scatter, fit_reg, ci, n_boot, boot_p, units,
                                  order, logistic, lowess, robust, logx,
                                  x_partial, y_partial, truncate, dropna,
                                  x_jitter, y_jitter, color, label)
