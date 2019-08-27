@@ -83,7 +83,6 @@ class _RegressionPlotter(_LinearPlotter):
         self.ci = ci
         self.x_ci = ci if x_ci == "ci" else x_ci
         self.n_boot = n_boot
-        self.boot_p = boot_p
         self.scatter = scatter
         self.fit_reg = fit_reg
         self.order = order
@@ -103,7 +102,8 @@ class _RegressionPlotter(_LinearPlotter):
 
         # Extract the data vals from the arguments or passed dataframe
         self.establish_variables(data, x=x, y=y, units=units,
-                                 x_partial=x_partial, y_partial=y_partial)
+                                 x_partial=x_partial, y_partial=y_partial,
+                                 boot_p=boot_p)
 
         # Drop null observations
         if dropna:
@@ -552,7 +552,7 @@ def lmplot(x, y, data, hue=None, col=None, row=None, palette=None,
         warnings.warn(msg, UserWarning)
 
     # Reduce the dataframe to only needed columns
-    need_cols = [x, y, hue, col, row, units, x_partial, y_partial]
+    need_cols = [x, y, hue, col, row, units, x_partial, y_partial, boot_p]
     cols = np.unique([a for a in need_cols if a is not None]).tolist()
     data = data[cols]
 

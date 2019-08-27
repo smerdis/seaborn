@@ -54,8 +54,13 @@ def bootstrap(*args, **kwargs):
     smooth = kwargs.get("smooth", False)
     random_seed = kwargs.get("random_seed", None)
     boot_p = kwargs.get("boot_p", None)
-    if boot_p is not None and len(boot_p) != n:
-        raise ValueError("Probability arrray must be same length as input(s)")
+    if boot_p is not None:
+        if len(boot_p) != n:
+            raise ValueError("Probability arrray must be same length as input(s)")
+        else:
+            boot_p_norm = boot_p/sum(boot_p) # must sum to 1
+    else:
+        boot_p_norm = None
     if axis is None:
         func_kwargs = dict()
     else:
@@ -87,11 +92,21 @@ def bootstrap(*args, **kwargs):
                                      func_kwargs, rs)
 
     boot_dist = []
+    r_boot = np.empty(n_boot)
     for i in range(int(n_boot)):
         # if boot_p is None this reduces to uniform distribution, so same as old behavior
-        resampler = rs.choice(n, n, p=boot_p) 
+        resampler = rs.choice(n, n, p=boot_p_norm) 
         sample = [a.take(resampler, axis=0) for a in args]
+        spearmanr = stats.spearmanr(sample[0][:, 1], sample[1]).correlation
+        #print(type(sample), type(sample[0]), sample[0].shape, type(sample[1]))
+        #print("s0", sample[0][:, 1], "s1", sample[1], spearmanr, sep="\n")
         boot_dist.append(f(*sample, **func_kwargs))
+        r_boot[i] = spearmanr
+
+    p = np.sum(r_boot>0)/n_boot
+    if p<.05 or p>.95:
+        print("***")
+    print(f"% of bootstrap iterations with r_s >0: {p}")
     return np.array(boot_dist)
 
 def _structured_bootstrap(args, n_boot, units, func, func_kwargs, rs):
